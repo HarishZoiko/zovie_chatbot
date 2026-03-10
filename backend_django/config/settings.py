@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 # ==============================
 # BASE DIRECTORY
 # ==============================
@@ -190,7 +189,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "chatbot" / "static"
 ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = "staticfiles"
 
 
 # ==============================
@@ -207,3 +206,22 @@ SESSION_COOKIE_AGE = 86400
 # ==============================
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ==============================
+# EMAIL CONFIGURATION (GoDaddy)
+# ==============================
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtpout.secureserver.net"
+
+EMAIL_PORT = 587
+
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = "support@zoikomobile.co.uk"
+
+EMAIL_HOST_PASSWORD = "YOUR_GODADDY_EMAIL_PASSWORD"
+
+DEFAULT_FROM_EMAIL = "support@zoikomobile.co.uk"

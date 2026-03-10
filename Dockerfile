@@ -8,11 +8,11 @@ COPY backend_django/requirements.txt .
 # install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy project
+# copy django project
 COPY backend_django .
 
 # collect static files
 RUN python manage.py collectstatic --noinput
 
-# run server
-CMD exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+# start django with gunicorn
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 config.wsgi:application
