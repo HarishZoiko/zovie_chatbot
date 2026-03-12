@@ -15,7 +15,7 @@ SECRET_KEY = "django-insecure-change-this-key"
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['zoviechatbot-722985113446.europe-west1.run.app', '*']
 
 
 # ==============================
