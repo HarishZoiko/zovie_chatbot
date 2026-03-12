@@ -14,5 +14,6 @@ COPY backend_django .
 # collect static files
 RUN python manage.py collectstatic --noinput
 
-# start django with gunicorn
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 config.wsgi:application
+EXPOSE 8000
+
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
