@@ -1,642 +1,1156 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Zovie Assistant</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zovie Assistant – Zoiko Mobile</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-
-body{
-font-family:Segoe UI;
-background:#f4f5f7;
-margin:0;
+/* ═══════════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p1:#7c3aed;--p2:#9333ea;--p3:#6d28d9;
+  --bg:#f4f5f7;--card:#fff;--border:#e5e7eb;
+  --txt:#111827;--sub:#6b7280;--font:'Inter',Segoe UI,sans-serif;
 }
+body{font-family:var(--font);background:var(--bg)}
 
+/* ═══════════════════════════════════════════════════
+   FAB TOGGLE BUTTON
+═══════════════════════════════════════════════════ */
 #chat-toggle{
-position:fixed;
-bottom:25px;
-right:25px;
-width:65px;
-height:65px;
-border-radius:50%;
-background:linear-gradient(90deg,#7c3aed,#9333ea);
-color:white;
-border:none;
-font-size:26px;
-cursor:pointer;
-box-shadow:0 10px 30px rgba(0,0,0,.3);
+  position:fixed;bottom:26px;right:26px;
+  width:66px;height:66px;border-radius:50%;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;border:none;font-size:28px;cursor:pointer;
+  box-shadow:0 10px 32px rgba(124,58,237,.55);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9990;transition:transform .2s,box-shadow .2s;
+}
+#chat-toggle:hover{transform:scale(1.1)}
+#chat-toggle::before{
+  content:'';position:absolute;inset:-9px;border-radius:50%;
+  border:3px solid rgba(124,58,237,.28);
+  animation:fabR 2.4s ease-out infinite;
+}
+@keyframes fabR{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.75);opacity:0}}
+#fab-dot{
+  position:absolute;top:-3px;right:-3px;
+  width:22px;height:22px;border-radius:50%;
+  background:#ff3b30;color:#fff;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  border:2.5px solid #fff;
 }
 
+/* ═══════════════════════════════════════════════════
+   CHAT WINDOW
+═══════════════════════════════════════════════════ */
 #chatbot{
-position:fixed;
-bottom:100px;
-right:25px;
-width:380px;
-height:650px;
-background:white;
-border-radius:18px;
-display:none;
-flex-direction:column;
-box-shadow:0 30px 80px rgba(0,0,0,.25);
-overflow:hidden;
+  position:fixed;bottom:108px;right:26px;
+  width:420px;
+  border-radius:20px;display:none;flex-direction:column;
+  box-shadow:0 24px 80px rgba(0,0,0,.3);
+  z-index:9991;overflow:hidden;
+  transform:scale(.88) translateY(28px);opacity:0;
+  transition:transform .32s cubic-bezier(.34,1.56,.64,1),opacity .26s ease;
+  max-height:calc(100vh - 128px);
 }
+#chatbot.open{display:flex}
+#chatbot.visible{transform:scale(1) translateY(0);opacity:1}
 
+/* ═══════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════ */
 #header{
-background:linear-gradient(90deg,#7c3aed,#9333ea);
-color:white;
-padding:15px;
-display:flex;
-justify-content:space-between;
-align-items:center;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  padding:13px 16px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-shrink:0;
 }
-
-.header-left{
-display:flex;
-gap:10px;
-align-items:center;
+.header-left{display:flex;gap:12px;align-items:center}
+.header-av{
+  width:46px;height:46px;border-radius:50%;
+  background:#fff;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 2.5px rgba(255,255,255,.4);
+  position:relative;flex-shrink:0;
 }
-
-.header-left img{
-width:34px;
-border-radius:50%;
+.header-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.header-av-fb{
+  width:46px;height:46px;border-radius:50%;
+  background:rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:900;color:#fff;
+  box-shadow:0 0 0 2.5px rgba(255,255,255,.4);
+  flex-shrink:0;
 }
+.hav-dot{
+  position:absolute;bottom:1px;right:1px;
+  width:13px;height:13px;border-radius:50%;
+  background:#4ade80;border:2.5px solid var(--p2);
+  animation:dp 2s ease-in-out infinite;
+}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.3}}
+.header-info .hname{color:#fff;font-size:15.5px;font-weight:700}
+.header-info .hsub{color:rgba(255,255,255,.75);font-size:11.5px;margin-top:1px}
+.header-actions{display:flex;gap:4px}
+.hbtn{
+  background:none;border:none;cursor:pointer;
+  color:rgba(255,255,255,.85);
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:background .15s;
+}
+.hbtn:hover{background:rgba(255,255,255,.18)}
+.hbtn svg{width:21px;height:21px;fill:currentColor}
 
+/* ═══════════════════════════════════════════════════
+   MESSAGES AREA
+═══════════════════════════════════════════════════ */
 #messages{
-flex:1;
-padding:18px;
-overflow-y:auto;
-background:#f9fafb;
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:16px 14px 12px;
+  background:#f9fafb;
+  min-height:380px;
+  scroll-behavior:smooth;
+}
+#messages::-webkit-scrollbar{width:4px}
+#messages::-webkit-scrollbar-thumb{background:rgba(124,58,237,.2);border-radius:4px}
+
+.zdate{text-align:center;margin:4px 0 14px}
+.zdate span{
+  background:rgba(124,58,237,.1);color:var(--p1);
+  font-size:11.5px;font-weight:600;padding:4px 18px;border-radius:8px;
 }
 
+/* ═══════════════════════════════════════════════════
+   BOT ROW & BUBBLES
+═══════════════════════════════════════════════════ */
 .bot-row{
-display:flex;
-gap:10px;
-margin-bottom:12px;
+  display:flex;gap:9px;margin-bottom:4px;
+  animation:mi .2s ease;
 }
+@keyframes mi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.bot-row+.user-bubble,.user-bubble+.bot-row{margin-top:6px}
 
-.bot-avatar img{
-width:28px;
-border-radius:50%;
+.ba{/* bot avatar */
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  overflow:hidden;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  align-self:flex-end;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.ba img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ba-fb{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;color:#fff;
+  align-self:flex-end;
 }
 
 .bot-bubble{
-background:#eef2ff;
-padding:12px 14px;
-border-radius:14px;
-max-width:75%;
-font-size:14px;
-line-height:1.5;
+  background:#fff;padding:11px 14px;
+  border-radius:4px 14px 14px 14px;
+  max-width:88%;font-size:14px;line-height:1.58;
+  color:var(--txt);word-break:break-word;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+  white-space:pre-line;
 }
 
 .user-bubble{
-background:#7c3aed;
-color:white;
-padding:12px 14px;
-border-radius:14px;
-margin-left:auto;
-margin-bottom:12px;
-max-width:75%;
-font-size:14px;
-word-break:break-word;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;padding:11px 14px;
+  border-radius:14px 4px 14px 14px;
+  margin-left:auto;margin-bottom:4px;
+  max-width:80%;font-size:14px;word-break:break-word;
+  box-shadow:0 2px 10px rgba(124,58,237,.35);
+  animation:mi .2s ease;
 }
 
+/* ═══════════════════════════════════════════════════
+   QUICK REPLY CHIPS
+═══════════════════════════════════════════════════ */
 .quick{
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-margin-top:10px;
+  display:flex;flex-wrap:wrap;gap:7px;
+  margin-top:10px;padding-top:9px;
+  border-top:1px solid rgba(124,58,237,.1);
 }
-
-.quick button{
-border:1px solid #b013c2;
-background:white;
-color:#7c3aed;
-padding:6px 12px;
-border-radius:18px;
-cursor:pointer;
-font-size:12px;
-transition:all .2s;
+.qbtn{
+  border:1.5px solid rgba(124,58,237,.35);
+  background:#faf5ff;color:var(--p1);
+  padding:7px 14px;border-radius:20px;
+  cursor:pointer;font-size:12.5px;font-family:var(--font);
+  font-weight:600;transition:all .15s ease;white-space:nowrap;
 }
-
-.quick button:hover{
-background:#7c3aed;
-color:white;
+.qbtn:hover{background:var(--p1);color:#fff;border-color:var(--p1);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.3)}
+.qbtn:active{transform:translateY(0)}
+.qbtn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.qbtn.cta-btn{
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;border-color:transparent;
+  box-shadow:0 3px 12px rgba(124,58,237,.4);
 }
+.qbtn.cta-btn:hover{opacity:.88;box-shadow:0 5px 16px rgba(124,58,237,.5)}
 
+/* ═══════════════════════════════════════════════════
+   3-OPTION CHOICE CARD
+═══════════════════════════════════════════════════ */
+.choice-card{
+  background:#fff;border-radius:16px;
+  box-shadow:0 4px 20px rgba(0,0,0,.1);
+  overflow:hidden;width:100%;margin:6px 0 6px 41px;
+  max-width:calc(100% - 41px);
+  animation:mi .2s ease;
+}
+.choice-btn{
+  display:flex;align-items:center;gap:13px;
+  width:100%;padding:14px 16px;
+  border:none;border-bottom:1px solid #f3f4f6;
+  background:#fff;cursor:pointer;font-family:var(--font);
+  transition:background .15s ease;text-align:left;
+}
+.choice-btn:last-child{border-bottom:none}
+.choice-btn:hover{background:#faf5ff}
+.choice-btn.cta{
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  border-bottom:none;
+}
+.choice-btn.cta:hover{opacity:.88}
+.choice-ico{
+  width:42px;height:42px;border-radius:12px;
+  background:rgba(124,58,237,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;flex-shrink:0;
+}
+.choice-btn.cta .choice-ico{background:rgba(255,255,255,.2)}
+.choice-txt{flex:1;min-width:0}
+.choice-lbl{font-size:14px;font-weight:700;color:var(--txt);display:block;margin-bottom:2px}
+.choice-desc{font-size:11.5px;color:var(--sub);display:block;line-height:1.4}
+.choice-btn.cta .choice-lbl,.choice-btn.cta .choice-desc{color:#fff}
+.choice-btn.cta .choice-desc{color:rgba(255,255,255,.8)}
+.choice-arrow{font-size:16px;color:#d1d5db;flex-shrink:0}
+.choice-btn.cta .choice-arrow{color:rgba(255,255,255,.7)}
+.choice-btn:hover .choice-arrow{color:var(--p1)}
+.choice-btn.cta:hover .choice-arrow{color:#fff}
+
+/* ═══════════════════════════════════════════════════
+   PLAN CARDS — VERTICAL STACK
+═══════════════════════════════════════════════════ */
+.plan-stack{
+  display:flex;flex-direction:column;gap:12px;
+  margin:6px 0 6px 41px;
+  max-width:calc(100% - 41px);
+}
+.plan-card{
+  background:#fff;border-radius:16px;
+  box-shadow:0 3px 16px rgba(0,0,0,.1);
+  overflow:hidden;border:2px solid transparent;
+  transition:border-color .2s,transform .15s,box-shadow .2s;
+  width:100%;
+}
+.plan-card:hover{border-color:var(--p2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(124,58,237,.2)}
+.plan-card.popular{border-color:var(--p1)}
+.plan-badge{
+  background:linear-gradient(90deg,var(--p1),var(--p2));
+  color:#fff;font-size:12.5px;font-weight:700;
+  padding:7px 16px;display:flex;align-items:center;gap:6px;
+}
+.plan-body{padding:16px 18px 14px}
+.plan-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.plan-name{font-size:15.5px;font-weight:800;color:var(--txt)}
+.plan-data{
+  font-size:12px;font-weight:700;padding:4px 12px;border-radius:18px;
+  background:#ede9fe;color:var(--p3);
+}
+.plan-data.unl{background:#e0f2fe;color:#0369a1}
+.plan-price{font-size:30px;font-weight:900;color:var(--txt);margin-bottom:12px;line-height:1.05}
+.plan-price span{font-size:14px;font-weight:500;color:var(--sub)}
+.plan-hr{border:none;border-top:1.5px solid #f3f4f6;margin-bottom:12px}
+.plan-feats{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.plan-feats li{font-size:13.5px;color:#374151;display:flex;align-items:flex-start;gap:9px;line-height:1.45}
+.plan-feats li .fi{font-size:13px;flex-shrink:0;margin-top:1px}
+.plan-buy{
+  display:block;width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;border:none;border-radius:10px;
+  font-size:14.5px;font-weight:700;cursor:pointer;
+  font-family:var(--font);text-align:center;text-decoration:none;
+  transition:opacity .2s,transform .15s;letter-spacing:.2px;
+}
+.plan-buy:hover{opacity:.88;transform:translateY(-1px)}
+
+/* ═══════════════════════════════════════════════════
+   REVIEW SECTION
+═══════════════════════════════════════════════════ */
+.kpi-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;
+  margin:6px 0 6px 41px;max-width:calc(100% - 41px);
+}
+.kpi-card{
+  background:#fff;border-radius:12px;padding:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);text-align:center;
+}
+.kpi-num{font-size:24px;font-weight:900;color:var(--p1);display:block;line-height:1.1}
+.kpi-lbl{font-size:11px;color:var(--sub);font-weight:600;margin-top:4px;line-height:1.3}
+
+.review-stack{
+  display:flex;flex-direction:column;gap:9px;
+  margin:6px 0 6px 41px;max-width:calc(100% - 41px);
+}
+.review-card{
+  background:#fff;border-radius:14px;padding:14px 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);width:100%;
+}
+.rv-stars{color:#f59e0b;font-size:17px;margin-bottom:7px;letter-spacing:1px}
+.rv-text{font-size:13px;color:#374151;line-height:1.55;margin-bottom:8px;font-style:italic}
+.rv-author{font-size:12.5px;font-weight:700;color:var(--p1)}
+.rv-date{font-size:11px;color:var(--sub);margin-top:1px}
+
+/* ═══════════════════════════════════════════════════
+   TYPING DOTS
+═══════════════════════════════════════════════════ */
+#typing{display:none;align-items:flex-end;gap:9px;margin-bottom:4px}
+.typing-bub{
+  background:#fff;border-radius:4px 14px 14px 14px;
+  padding:12px 16px;box-shadow:0 2px 10px rgba(0,0,0,.08);
+  display:flex;gap:5px;align-items:center;
+}
+.typing-bub .d{width:8px;height:8px;background:#c4b5fd;border-radius:50%;animation:td 1.35s infinite}
+.typing-bub .d:nth-child(2){animation-delay:.18s}
+.typing-bub .d:nth-child(3){animation-delay:.36s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* ═══════════════════════════════════════════════════
+   MIC STATUS
+═══════════════════════════════════════════════════ */
 #mic-status{
-font-size:11px;
-color:#9333ea;
-text-align:center;
-padding:2px 12px 4px;
-min-height:16px;
-font-style:italic;
+  font-size:11.5px;color:var(--p1);text-align:center;
+  padding:3px 12px;min-height:20px;background:#f9fafb;
+  font-weight:600;font-style:italic;
+  border-top:1px solid var(--border);
 }
 
+/* ═══════════════════════════════════════════════════
+   INPUT AREA
+═══════════════════════════════════════════════════ */
 #input-area{
-display:flex;
-gap:8px;
-padding:12px;
-border-top:1px solid #eee;
-align-items:center;
+  display:flex;gap:8px;padding:10px 12px 12px;
+  border-top:1px solid var(--border);background:#fff;flex-shrink:0;
+  align-items:flex-end;
 }
-
+.input-wrap{
+  flex:1;background:#f3f4f6;border-radius:24px;
+  display:flex;align-items:center;
+  border:1.5px solid transparent;transition:border-color .2s;
+  overflow:hidden;
+}
+.input-wrap:focus-within{border-color:rgba(124,58,237,.45);background:#faf5ff}
 #user-input{
-flex:1;
-padding:10px 14px;
-border-radius:20px;
-border:1px solid #ccc;
-font-size:14px;
-outline:none;
-font-family:Segoe UI;
+  flex:1;padding:10px 14px;border:none;background:transparent;
+  font-size:14.5px;outline:none;font-family:var(--font);color:var(--txt);
+  resize:none;max-height:100px;line-height:1.5;
+}
+#user-input::placeholder{color:#9ca3af}
+#user-input:disabled{opacity:.55}
+.ib{/* icon button */
+  width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .18s ease;font-size:18px;
+}
+.ib:hover{transform:scale(1.09)}
+.ib:active{transform:scale(.93)}
+#mic{background:#f3f4f6;color:var(--sub)}
+#mic svg{width:22px;height:22px;fill:currentColor}
+#mic.listening{background:var(--p1)}
+#mic.listening svg{fill:#fff}
+#send{background:linear-gradient(135deg,var(--p1),var(--p2));box-shadow:0 4px 14px rgba(124,58,237,.4)}
+#send svg{width:21px;height:21px;fill:#fff}
+.zpow{
+  text-align:center;font-size:10.5px;color:#9ca3af;
+  padding:3px 0 7px;background:#fff;font-style:italic;
 }
 
-#send,#mic{
-background:#7c3aed;
-border:none;
-color:white;
-width:40px;
-height:40px;
-border-radius:50%;
-cursor:pointer;
-font-size:16px;
-display:flex;
-align-items:center;
-justify-content:center;
-flex-shrink:0;
+/* ═══════════════════════════════════════════════════
+   RATING WIDGET
+═══════════════════════════════════════════════════ */
+.rating-wrap{
+  background:#fff;border-radius:16px;padding:18px 20px;
+  box-shadow:0 3px 16px rgba(0,0,0,.1);
+  margin:6px 0 6px 41px;max-width:calc(100% - 41px);
+  animation:mi .2s ease;
 }
-
-#mic.listening{
-animation:pulse 1s infinite;
-background:red !important;
+.rating-wrap .rt{font-size:15px;font-weight:700;color:var(--txt);margin-bottom:3px}
+.rating-wrap .rs{font-size:12px;color:var(--sub);margin-bottom:12px}
+.star-row{display:flex;gap:7px}
+.star{font-size:32px;cursor:pointer;color:#e5e7eb;transition:all .14s;background:none;border:none;padding:2px}
+.star.active{color:#f59e0b;transform:scale(1.12)}
+.feedback-form{
+  margin-top:14px;display:none;
+  border-top:1px solid var(--border);padding-top:14px;
 }
-
-@keyframes pulse{
-0%{transform:scale(1)}
-50%{transform:scale(1.2)}
-100%{transform:scale(1)}
+.fi-lbl{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px}
+.fi-inp{
+  width:100%;padding:10px 13px;margin-bottom:8px;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-family:var(--font);font-size:13.5px;outline:none;
+  transition:border .2s;color:var(--txt);resize:vertical;
 }
-
-.star{
-font-size:22px;
-cursor:pointer;
-color:#ccc;
-transition:color .2s;
+.fi-inp:focus{border-color:var(--p1)}
+.fi-submit{
+  width:100%;padding:11px;
+  background:linear-gradient(135deg,var(--p1),var(--p2));
+  color:#fff;border:none;border-radius:10px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  font-family:var(--font);transition:opacity .2s;
 }
+.fi-submit:hover{opacity:.88}
+.fi-submit:disabled{opacity:.55;cursor:not-allowed}
 
-.star.active{
-color:gold;
+/* ═══════════════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════════════ */
+@media(max-width:480px){
+  #chatbot{width:calc(100vw - 12px);right:6px;bottom:88px;max-height:calc(100svh - 108px);border-radius:16px}
+  .plan-stack,.review-stack,.kpi-grid,.choice-card,.rating-wrap{margin-left:41px;max-width:calc(100% - 41px)}
 }
-
-.feedback-input{
-width:100%;
-padding:8px;
-margin-top:6px;
-border-radius:8px;
-border:1px solid #ccc;
-box-sizing:border-box;
-font-family:Segoe UI;
-font-size:13px;
-}
-
-.rating-row{
-padding:4px 0 12px;
-}
-
 </style>
 </head>
-
 <body>
 
-<button id="chat-toggle">💬</button>
+<!-- ══ FAB ══ -->
+<button id="chat-toggle" aria-label="Chat with Zovie">
+  <div id="fab-dot">1</div>
+  💬
+</button>
 
+<!-- ══ CHAT WINDOW ══ -->
 <div id="chatbot">
+
+  <!-- Header -->
   <div id="header">
     <div class="header-left">
-      <img src="/static/assets/logo.png">
-      <div><b>Zovie</b><br><small>🤖⚡</small></div>
+      <div id="hav-wrap"></div>
+      <div class="header-info">
+        <div class="hname">Zovie &middot; Zoiko Mobile</div>
+        <div class="hsub" id="hsub">Online &middot; AI assistant</div>
+      </div>
     </div>
-    <span id="close" style="cursor:pointer">✕</span>
+    <div class="header-actions">
+      <button class="hbtn" title="Call us" onclick="window.open('tel:+441234567890')">
+        <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      </button>
+      <button class="hbtn" id="close-btn" title="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
   </div>
 
-  <div id="messages"></div>
+  <!-- Messages -->
+  <div id="messages">
+    <div id="typing">
+      <div id="t-av"></div>
+      <div class="typing-bub">
+        <div class="d"></div><div class="d"></div><div class="d"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="mic-status"></div>
 
+  <!-- Input -->
   <div id="input-area">
-    <button id="mic">🎤</button>
-    <input id="user-input" placeholder="Ask anything...">
-    <button id="send">➤</button>
+    <button class="ib" id="mic" title="Voice input">
+      <svg viewBox="0 0 24 24"><path d="M12 1a4 4 0 014 4v6a4 4 0 01-8 0V5a4 4 0 014-4zm0 2a2 2 0 00-2 2v6a2 2 0 004 0V5a2 2 0 00-2-2zm-1 14.93V20H9v2h6v-2h-2v-2.07A7 7 0 0019 11h-2a5 5 0 01-10 0H5a7 7 0 006 6.93z"/></svg>
+    </button>
+    <div class="input-wrap">
+      <textarea id="user-input" rows="1" placeholder="Ask Zovie anything..." autocomplete="off"></textarea>
+    </div>
+    <button class="ib" id="send" title="Send">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
   </div>
+  <div class="zpow">Powered by Zovie AI &middot; Zoiko Mobile UK</div>
 </div>
 
 <script>
+/* ════════════════════════════════════════════════════════════
+   ZOVIE NORMAL CHATBOT v3.0
+   ─────────────────────────────────────────────────────────
+   Features merged from WhatsApp chatbot:
+   ✅ GPT-powered /chat/ endpoint with conversation history
+   ✅ 3-option intermediate screen before plan cards
+   ✅ Full-width vertical plan cards with Buy → checkout
+   ✅ All plan categories: Student, Essential, Social, Data, Zoiko, 30Day, Business
+   ✅ Customer Reviews with KPI grid + vertical review cards
+   ✅ Voice TTS (UK female) + Speech recognition
+   ✅ Typing indicator
+   ✅ Rating widget → /feedback/
+   ✅ All original menu options preserved + URLs
+   ✅ Purple theme maintained
+════════════════════════════════════════════════════════════ */
 
-const messages  = document.getElementById("messages")
-const input     = document.getElementById("user-input")
-const micBtn    = document.getElementById("mic")
-const sendBtn   = document.getElementById("send")
-const micStatus = document.getElementById("mic-status")
+const msgs    = document.getElementById('messages')
+const inp     = document.getElementById('user-input')
+const sendBtn = document.getElementById('send')
+const micBtn  = document.getElementById('mic')
+const micSt   = document.getElementById('mic-status')
+const typEl   = document.getElementById('typing')
+const fab     = document.getElementById('chat-toggle')
+const dot     = document.getElementById('fab-dot')
+const closeB  = document.getElementById('close-btn')
+const hSub    = document.getElementById('hsub')
 
-let selectedRating = 0
-let isSending      = false
-let isListening    = false
-let recognition    = null
+const LOGO = '/static/assets/logo.png'
 
-function speak(text){
+/* ══════════════════════════════════════════════════════
+   PLAN DATA — update cartId to your WooCommerce IDs
+══════════════════════════════════════════════════════ */
+const PLANS = {
+  student:[
+    {name:'Zoiko Student 5GB',   data:'5GB',        price:'£6.99',  cartId:280,
+     features:['500 Calls & Texts','Student Verified Discount','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 2GB / 200 min / 200 Texts'},
+    {name:'Zoiko Student 15GB',  data:'15GB',        price:'£9.99',  cartId:281, popular:true,
+     features:['Unlimited Calls & Texts','Student Verified Discount','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 5GB / 500 min / 500 Texts'},
+    {name:'Zoiko Student 30GB',  data:'30GB',        price:'£12.99', cartId:282,
+     features:['Unlimited Calls & Texts','Student Verified Discount','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 10GB / 500 min / 500 Texts'},
+  ],
+  essential:[
+    {name:'Zoiko Essential 5GB',  data:'5GB',  price:'£5.99',  cartId:270,
+     features:['250 Calls & Texts','Wi-Fi Calling & eSIM','No Contract'],
+     roaming:'EU Roaming: 1GB / 100 min'},
+    {name:'Zoiko Essential 10GB', data:'10GB', price:'£8.49',  cartId:271, popular:true,
+     features:['500 Calls & Texts','Wi-Fi Calling & eSIM','No Contract'],
+     roaming:'EU Roaming: 3GB / 300 min'},
+    {name:'Zoiko Essential 20GB', data:'20GB', price:'£11.99', cartId:272,
+     features:['Unlimited Calls & Texts','Wi-Fi Calling & eSIM','No Contract'],
+     roaming:'EU Roaming: 8GB / 500 min'},
+  ],
+  social:[
+    {name:'Zoiko Social 3GB',  data:'3GB',  price:'£3.99', cartId:260,
+     features:['Unlimited Calls & Texts','Social Media Included','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 1GB'},
+    {name:'Zoiko Social 10GB', data:'10GB', price:'£7.49', cartId:261, popular:true,
+     features:['Unlimited Calls & Texts','Social Media Included','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 3GB'},
+  ],
+  data:[
+    {name:'Zoiko Data 10GB',      data:'10GB',      price:'£8.99',  cartId:290,
+     features:['Data Only SIM','No Calls or Texts','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 3GB'},
+    {name:'Zoiko Data 30GB',      data:'30GB',      price:'£14.99', cartId:291, popular:true,
+     features:['Data Only SIM','No Calls or Texts','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 10GB'},
+    {name:'Zoiko Data Unlimited', data:'Unlimited', price:'£22.99', cartId:292,
+     features:['Data Only SIM','No Calls or Texts','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 20GB'},
+  ],
+  zoiko:[
+    {name:'Zoiko Standard 10GB',  data:'10GB',      price:'£12.14', cartId:283,
+     features:['500 Calls & Texts','International Calls*','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 5GB / 500 min / 500 Texts'},
+    {name:'Zoiko Max 30GB',       data:'30GB',      price:'£16.99', cartId:284, popular:true,
+     features:['Unlimited Calls & Texts','Free International Calls','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 15GB / 1000 min / 1000 Texts'},
+    {name:'Zoiko Elite 100GB',    data:'100GB',     price:'£28.34', cartId:285,
+     features:['Unlimited Calls & Texts','Free International Calls','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 30GB / 2000 min / 2000 Texts'},
+    {name:'Zoiko Unlimited Data', data:'Unlimited', price:'£29.50', cartId:286,
+     features:['Unlimited Calls & Texts','Free International Calls','Wi-Fi Calling & eSIM'],
+     roaming:'EU Roaming: 40GB / Unlimited Calls & Texts'},
+  ],
+  '30day':[
+    {name:'Zoiko Plus 3GB',    data:'3GB',   price:'£5.66',  cartId:300,
+     features:['Unlimited Calls & Texts','Wi-Fi Calling & eSIM','30-Day Rolling — Cancel Anytime'],
+     roaming:'EU Roaming: 1GB'},
+    {name:'Zoiko Max 30GB',    data:'30GB',  price:'£16.99', cartId:301, popular:true,
+     features:['Unlimited Calls & Texts','Free International Calls','30-Day Rolling'],
+     roaming:'EU Roaming: 15GB / 1000 min'},
+    {name:'Zoiko Elite 100GB', data:'100GB', price:'£28.34', cartId:302,
+     features:['Unlimited Calls & Texts','Free International Calls','30-Day Rolling'],
+     roaming:'EU Roaming: 30GB / 2000 min'},
+  ],
+  business:[
+    {name:'Business Starter',   data:'20GB',      price:'£14.99', cartId:310,
+     features:['Unlimited Calls & Texts','Dedicated Account Manager','Wi-Fi Calling & eSIM','Priority Support'],
+     roaming:'EU Roaming: 8GB / 500 min'},
+    {name:'Business Pro',       data:'50GB',      price:'£24.99', cartId:311, popular:true,
+     features:['Unlimited Calls & Texts','Dedicated Account Manager','Priority 24/7 Support','5 SIMs Included'],
+     roaming:'EU Roaming: 20GB / 2000 min'},
+    {name:'Business Unlimited', data:'Unlimited', price:'£39.99', cartId:312,
+     features:['Unlimited Calls & Texts','Dedicated Account Manager','Priority 24/7 Support','10 SIMs Included'],
+     roaming:'EU Roaming: Unlimited'},
+  ],
+}
+
+const PLAN_LABELS = {
+  student:'Student Plans', essential:'Essential Plans',
+  social:'Social Tariff Plans', data:'Data Only Plans',
+  zoiko:'Zoiko Plans', '30day':'30 Day Plans', business:'Business Deals',
+}
+
+const REVIEWS = [
+  {stars:5, text:'Switched from EE and saving £18/month. Signal is great everywhere I go!', author:'Sarah M.', date:'March 2026'},
+  {stars:5, text:'The international calling plan is brilliant — call my family in India for free!', author:'Raj P.', date:'February 2026'},
+  {stars:5, text:'Student plan is amazing value. Coverage is better than my old network.', author:'Emma T.', date:'March 2026'},
+  {stars:4, text:'Really happy with Zoiko. Setup was easy and customer service was helpful.', author:'James K.', date:'January 2026'},
+  {stars:5, text:'Best UK MVNO by far. Unlimited data for less than what I paid for 10GB before!', author:'Priya S.', date:'February 2026'},
+]
+
+/* ── Menus ── */
+const MAIN_MENU = [
+  'Zoiko Plans','Business Deals','Devices','Animals & Music','About Us',
+  'Activate SIM','Top Up','Switch & Save','Contact Us','Support','International Calls','Rate & Exit'
+]
+const PLAN_TYPES = ['Student Plans','Essential Plans','Social Tariff','Data Only Plans','30 Day Plans','⬅️ Back']
+const RESET_WORDS = new Set(['hi','hello','hey','start','menu','main menu','home','restart','back to start','hiya','0'])
+
+let history = [], selectedRating = 0, isBusy = false, isListening = false, recog = null, ukV = null, started = false, isOpen = false
+
+/* ── CSRF ── */
+const csrf = () => (document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/) || [])[2] || ''
+
+/* ── Scroll ── */
+const scroll = () => requestAnimationFrame(() => { msgs.scrollTop = msgs.scrollHeight })
+
+/* ══════════════════════════════════════════════════════
+   AVATAR helpers — defined first
+══════════════════════════════════════════════════════ */
+function makeAvatar() {
+  const wrap = document.createElement('div')
+  wrap.className = 'ba'
+  const img = document.createElement('img')
+  img.src = LOGO; img.alt = 'Z'
+  img.onerror = function() { wrap.className = 'ba-fb'; wrap.textContent = 'Z'; this.remove() }
+  wrap.appendChild(img)
+  return wrap
+}
+
+/* ── Build header avatar ── */
+;(function(){
+  const wrap = document.getElementById('hav-wrap')
+  const el = document.createElement('div'); el.className = 'header-av'
+  const img = document.createElement('img'); img.src = LOGO; img.alt = 'Zoiko'
+  img.onerror = function() {
+    el.className = 'header-av-fb'; el.textContent = 'Z'
+    const d = document.createElement('div'); d.className = 'hav-dot'; el.appendChild(d)
+    this.remove()
+  }
+  el.appendChild(img)
+  const d = document.createElement('div'); d.className = 'hav-dot'; el.appendChild(d)
+  wrap.appendChild(el)
+})()
+
+document.getElementById('t-av').appendChild(makeAvatar())
+
+/* ── Textarea auto-resize ── */
+inp.addEventListener('input', function(){
+  this.style.height = 'auto'
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px'
+})
+
+/* ══════════════════════════════════════════════════════
+   TTS — UK Female voice
+══════════════════════════════════════════════════════ */
+function loadVoice() {
+  const voices = speechSynthesis.getVoices()
+  const prefs = [v=>v.name==='Serena',v=>v.name==='Kate',v=>v.name.includes('Google UK English Female'),v=>v.lang==='en-GB'&&/female/i.test(v.name),v=>v.lang==='en-GB',v=>v.lang.startsWith('en')]
+  for (const fn of prefs) { const f = voices.find(fn); if(f){ukV=f;break} }
+}
+if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoice
+loadVoice()
+
+function speak(text) {
   speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text.replace(/[⭐★]/g,""))
-  u.lang = "en-GB"
+  const clean = text.replace(/<[^>]+>/g,' ').replace(/https?:\/\/\S+/g,' ').replace(/[^\w\s',.!?£\-]/g,' ').replace(/\s{2,}/g,' ').trim()
+  if (!clean) return
+  const u = new SpeechSynthesisUtterance(clean)
+  if (ukV) u.voice = ukV; u.lang = 'en-GB'; u.rate = 0.9; u.pitch = 1.06
   speechSynthesis.speak(u)
 }
 
-function bot(text, buttons = []){
-  const row = document.createElement("div")
-  row.className = "bot-row"
-  row.innerHTML = `
-    <div class="bot-avatar"><img src="/static/assets/logo.png"></div>
-    <div class="bot-bubble">${text}</div>
-  `
-  messages.appendChild(row)
+/* ── Busy state ── */
+function setBusy(v) {
+  isBusy = v; inp.disabled = v; sendBtn.disabled = v
+  hSub.textContent = v ? 'Zovie is typing…' : 'Online · AI assistant'
+}
 
-  if(buttons.length){
-    const quick = document.createElement("div")
-    quick.className = "quick"
-    buttons.forEach(b => {
-      const btn = document.createElement("button")
-      if(typeof b === "object"){
-        btn.innerText = b.text
-        btn.onclick = () => window.open(b.url, "_blank")
+/* ── Typing indicator ── */
+function showTyping() { msgs.appendChild(typEl); typEl.style.display = 'flex'; scroll() }
+function hideTyping() { typEl.style.display = 'none' }
+
+/* ── Disable chips in a chip bar ── */
+function disChips(cs) { cs.querySelectorAll('.qbtn').forEach(b => b.disabled = true) }
+
+/* ══════════════════════════════════════════════════════
+   BOT BUBBLE + CHIPS
+══════════════════════════════════════════════════════ */
+function bot(text, chips = [], isCta = []) {
+  hideTyping()
+  const row = document.createElement('div'); row.className = 'bot-row'
+  row.appendChild(makeAvatar())
+  const bub = document.createElement('div'); bub.className = 'bot-bubble'
+  bub.innerHTML = text.replace(/\n/g, '<br>')
+
+  if (chips.length) {
+    const cs = document.createElement('div'); cs.className = 'quick'
+    chips.forEach((c, i) => {
+      const btn = document.createElement('button'); btn.className = 'qbtn'
+      if (isCta.includes(i)) btn.classList.add('cta-btn')
+      if (typeof c === 'object') {
+        btn.textContent = c.text
+        btn.onclick = () => window.open(c.url, '_blank')
       } else {
-        btn.innerText = b
-        btn.onclick = () => {
-          userBubble(b)
-          processChoice(b)
-        }
+        btn.textContent = c
+        btn.onclick = () => { disChips(cs); userBubble(c); handleChip(c) }
       }
-      quick.appendChild(btn)
+      cs.appendChild(btn)
     })
-    row.querySelector(".bot-bubble").appendChild(quick)
+    bub.appendChild(cs)
   }
 
-  messages.scrollTop = messages.scrollHeight
-  speak(text)
+  row.appendChild(bub); msgs.insertBefore(row, typEl); scroll(); speak(text)
 }
 
-function userBubble(text){
-  const div = document.createElement("div")
-  div.className = "user-bubble"
-  div.innerText = text
-  messages.appendChild(div)
-  messages.scrollTop = messages.scrollHeight
+/* ══════════════════════════════════════════════════════
+   USER BUBBLE
+══════════════════════════════════════════════════════ */
+function userBubble(text) {
+  const div = document.createElement('div'); div.className = 'user-bubble'; div.textContent = text
+  msgs.insertBefore(div, typEl); scroll()
 }
 
-function mainMenu(){
-  bot(
-    "Hello! I'm Zovie, your Zoiko mobile assistant. Please select a service.",
-    [
-      "Zoiko Plans","Business Deals","Devices","Animals & Music","About Us",
-      "Activate SIM","Top Up","Switch & Save","Contact Us","Support",
-      "International Calls","Exit"
-    ]
-  )
+/* ══════════════════════════════════════════════════════
+   MAIN MENU
+══════════════════════════════════════════════════════ */
+function mainMenu() {
+  hideTyping()
+  Array.from(msgs.children).forEach(el => { if (el !== typEl) el.remove() })
+  const dd = document.createElement('div'); dd.className = 'zdate'; dd.innerHTML = '<span>Today</span>'
+  msgs.insertBefore(dd, typEl); msgs.appendChild(typEl)
+  bot("Hello! 👋 I'm Zovie, your Zoiko Mobile assistant.\n\nHow can I help you today?", MAIN_MENU, [0,1])
 }
 
-const menuMap = {
-  "zoiko plans"        : "Zoiko Plans",
-  "plans"              : "Zoiko Plans",
-  "business deals"     : "Business Deals",
-  "business"           : "Business Deals",
-  "devices"            : "Devices",
-  "device"             : "Devices",
-  "animals & music"    : "Animals & Music",
-  "animals and music"  : "Animals & Music",
-  "animals music"      : "Animals & Music",
-  "music"              : "Animals & Music",
-  "about us"           : "About Us",
-  "about"              : "About Us",
-  "activate sim"       : "Activate SIM",
-  "activate"           : "Activate SIM",
-  "sim"                : "Activate SIM",
-  "top up"             : "Top Up",
-  "topup"              : "Top Up",
-  "recharge"           : "Top Up",
-  "switch & save"      : "Switch & Save",
-  "switch and save"    : "Switch & Save",
-  "switch"             : "Switch & Save",
-  "contact us"         : "Contact Us",
-  "contact"            : "Contact Us",
-  "support"            : "Support",
-  "help"               : "Support",
-  "international calls": "International Calls",
-  "international"      : "International Calls",
-  "calling"            : "International Calls",
-  "exit"               : "Exit",
-  "bye"                : "Exit",
-  "quit"               : "Exit",
-  "back"               : "Back",
-  "go back"            : "Back",
-  "main menu"          : "Back",
-  "student plans"      : "Student Plans",
-  "student"            : "Student Plans",
-  "essential plans"    : "Essential Plans",
-  "essential"          : "Essential Plans",
-  "social tariff"      : "Social Tariff",
-  "social"             : "Social Tariff",
-  "tariff"             : "Social Tariff",
-  "data only plans"    : "Data Only Plans",
-  "data only"          : "Data Only Plans",
-  "data plans"         : "Data Only Plans",
-  "data"               : "Data Only Plans",
-  "30 day plans"       : "30 Day Plans",
-  "30 day"             : "30 Day Plans",
-  "thirty day"         : "30 Day Plans",
-  "monthly"            : "30 Day Plans"
+/* ══════════════════════════════════════════════════════
+   PLAN TYPE MENU
+══════════════════════════════════════════════════════ */
+function showPlanTypes() {
+  bot('📱 Great! We have plans to suit every need.\n\nWhich type of plan are you looking for?', PLAN_TYPES)
 }
 
-function resolveChoice(text){
-  const key = text.trim().toLowerCase()
-  if(menuMap[key]) return menuMap[key]
-  let best = null, bestLen = 0
-  for(const [k, v] of Object.entries(menuMap)){
-    if(key.includes(k) && k.length > bestLen){
-      best = v; bestLen = k.length
-    }
-  }
-  return best
+/* ══════════════════════════════════════════════════════
+   3-OPTION CHOICE CARD
+══════════════════════════════════════════════════════ */
+function showPlanChoice(planKey) {
+  hideTyping()
+  const label   = PLAN_LABELS[planKey] || 'Plans'
+  const planArr = PLANS[planKey] || []
+  const popular = planArr.find(p => p.popular) || planArr[0]
+
+  /* intro bubble */
+  const row1 = document.createElement('div'); row1.className = 'bot-row'
+  row1.appendChild(makeAvatar())
+  const bub1 = document.createElement('div'); bub1.className = 'bot-bubble'
+  bub1.textContent = `You've selected ${label}! 🎉\n\nWhat would you like to do?`
+  row1.appendChild(bub1); msgs.insertBefore(row1, typEl)
+
+  /* choice card */
+  const card = document.createElement('div'); card.className = 'choice-card'
+
+  /* Option 1 — Checkout */
+  const b1 = document.createElement('button'); b1.className = 'choice-btn cta'
+  b1.innerHTML = `<div class="choice-ico">🛒</div><div class="choice-txt"><span class="choice-lbl">Go to Checkout</span><span class="choice-desc">Most popular: ${popular ? popular.name + ' — ' + popular.price + '/mo' : label}</span></div><span class="choice-arrow">→</span>`
+  b1.onclick = () => { if(popular) window.open(`https://zoikomobile.co.uk/checkout/?add-to-cart=${popular.cartId}`, '_blank') }
+
+  /* Option 2 — View all plans */
+  const b2 = document.createElement('button'); b2.className = 'choice-btn'
+  b2.innerHTML = `<div class="choice-ico">📋</div><div class="choice-txt"><span class="choice-lbl">View All ${label}</span><span class="choice-desc">Browse all plans with full details, features & pricing</span></div><span class="choice-arrow">→</span>`
+  b2.onclick = () => showPlanCards(planKey)
+
+  /* Option 3 — Main menu */
+  const b3 = document.createElement('button'); b3.className = 'choice-btn'
+  b3.innerHTML = `<div class="choice-ico">🏠</div><div class="choice-txt"><span class="choice-lbl">Back to Main Menu</span><span class="choice-desc">Explore other options or ask Zovie anything</span></div><span class="choice-arrow">→</span>`
+  b3.onclick = () => { history = []; mainMenu() }
+
+  card.appendChild(b1); card.appendChild(b2); card.appendChild(b3)
+  msgs.insertBefore(card, typEl)
+  scroll()
+  speak(`You've selected ${label}. Go to checkout, view all plans, or go back to the main menu.`)
 }
 
-function processChoice(choice){
-  switch(choice){
+/* ══════════════════════════════════════════════════════
+   VERTICAL PLAN CARDS
+══════════════════════════════════════════════════════ */
+function showPlanCards(planKey) {
+  hideTyping()
+  const plans = PLANS[planKey] || []
+  const label = PLAN_LABELS[planKey] || 'Plans'
 
-    case "Zoiko Plans":
-      bot(
-        "Zoiko Mobile offers affordable SIM-only plans for students, professionals, and families with fast 4G/5G and reliable UK coverage.",
-        ["Student Plans","Essential Plans","Social Tariff","Data Only Plans","30 Day Plans","Back"]
-      ); break
+  /* header bubble */
+  const row1 = document.createElement('div'); row1.className = 'bot-row'
+  row1.appendChild(makeAvatar())
+  const bub = document.createElement('div'); bub.className = 'bot-bubble'
+  bub.innerHTML = `Here are all our <strong>${label}</strong>! 👇<br><small style="color:#6b7280">Tap "Buy this plan →" on any card to go straight to checkout.</small>`
+  /* nav chips */
+  const cs = document.createElement('div'); cs.className = 'quick'
+  const bb1 = document.createElement('button'); bb1.className = 'qbtn'; bb1.textContent = '⬅️ Back to Plan Types'
+  bb1.onclick = () => { disChips(cs); userBubble('⬅️ Back to Plan Types'); showPlanTypes() }
+  const bb2 = document.createElement('button'); bb2.className = 'qbtn'; bb2.textContent = '🏠 Main Menu'
+  bb2.onclick = () => { disChips(cs); userBubble('🏠 Main Menu'); history = []; mainMenu() }
+  cs.appendChild(bb1); cs.appendChild(bb2); bub.appendChild(cs)
+  row1.appendChild(bub); msgs.insertBefore(row1, typEl)
 
-    case "Student Plans":
-      bot(
-        "Our Student Discount Programme helps students save money — special discounts on monthly SIM-only plans and a free SIM when switching networks.",
-        [{text:"View Student Plans", url:"https://zoikomobile.co.uk/student-discount-programme/"},"Back"]
-      ); break
+  /* vertical card stack */
+  const stack = document.createElement('div'); stack.className = 'plan-stack'
+  plans.forEach(plan => {
+    const card = document.createElement('div')
+    card.className = 'plan-card' + (plan.popular ? ' popular' : '')
+    const dataCls = plan.data === 'Unlimited' ? 'plan-data unl' : 'plan-data'
+    let html = ''
+    if (plan.popular) html += `<div class="plan-badge">⭐ Most Popular</div>`
+    html += `<div class="plan-body">
+      <div class="plan-top"><div class="plan-name">${plan.name}</div><div class="${dataCls}">${plan.data}</div></div>
+      <div class="plan-price">${plan.price}<span>/month</span></div>
+      <hr class="plan-hr">
+      <ul class="plan-feats">
+        ${plan.features.map(f=>`<li><span class="fi">✅</span>${f}</li>`).join('')}
+        <li><span class="fi">🌍</span>${plan.roaming}</li>
+      </ul>
+      <a class="plan-buy" href="https://zoikomobile.co.uk/checkout/?add-to-cart=${plan.cartId}" target="_blank" rel="noopener">Buy this plan →</a>
+    </div>`
+    card.innerHTML = html; stack.appendChild(card)
+  })
+  msgs.insertBefore(stack, typEl)
 
-    case "Essential Plans":
-      bot(
-        "Zoiko Essential Plans provide exclusive discounts for public sector workers and their families with long-term savings and premium connectivity.",
-        [{text:"View Essential Plans", url:"https://zoikomobile.co.uk/civilservants/"},"Back"]
-      ); break
+  /* BOTTOM NAV — so user isn't stranded after scrolling all cards */
+  const rowB = document.createElement('div'); rowB.className = 'bot-row'
+  rowB.appendChild(makeAvatar())
+  const bubB = document.createElement('div'); bubB.className = 'bot-bubble'
+  bubB.textContent = `That's all our ${label}! 😊\nWant to explore more?`
+  const csB = document.createElement('div'); csB.className = 'quick'
+  const bk = document.createElement('button'); bk.className = 'qbtn'; bk.textContent = '⬅️ Back to Plan Types'
+  bk.onclick = () => { disChips(csB); userBubble('⬅️ Back to Plan Types'); showPlanTypes() }
+  const hm = document.createElement('button'); hm.className = 'qbtn'; hm.textContent = '🏠 Main Menu'
+  hm.onclick = () => { disChips(csB); userBubble('🏠 Main Menu'); history = []; mainMenu() }
+  const bd = document.createElement('button'); bd.className = 'qbtn'; bd.textContent = '💼 Business Deals'
+  bd.onclick = () => { disChips(csB); userBubble('💼 Business Deals'); showBusinessChoice() }
+  csB.appendChild(bk); csB.appendChild(hm); csB.appendChild(bd)
+  bubB.appendChild(csB); rowB.appendChild(bubB); msgs.insertBefore(rowB, typEl)
 
-    case "Social Tariff":
-      bot(
-        "Zoiko Social Tariff Plans offer cost-effective mobile services to help bridge the digital divide for individuals and families.",
-        [{text:"View Social Tariff Plans", url:"https://zoikomobile.co.uk/social-tariff-plans/"},"Back"]
-      ); break
+  scroll()
+  speak(`Here are all our ${label}. Tap buy this plan on any card to go straight to checkout.`)
+}
 
-    case "Data Only Plans":
-      bot(
-        "Our Data Only Plans are perfect for tablets, laptops, and hotspots — flexible packages without a traditional voice plan.",
-        [{text:"View Data Plans", url:"https://zoikomobile.co.uk/data-only-plans/"},"Back"]
-      ); break
+/* ══════════════════════════════════════════════════════
+   BUSINESS DEALS — choice screen first
+══════════════════════════════════════════════════════ */
+function showBusinessChoice() {
+  hideTyping()
+  const popular = PLANS.business.find(p => p.popular) || PLANS.business[0]
 
-    case "30 Day Plans":
-      bot(
-        "Zoiko 30-Day Plans offer flexible monthly contracts with no long commitments — change anytime with high-speed internet and clear calls.",
-        [{text:"View 30 Day Plans", url:"https://zoikomobile.co.uk/30-day-plan/"},"Back"]
-      ); break
+  const row1 = document.createElement('div'); row1.className = 'bot-row'
+  row1.appendChild(makeAvatar())
+  const bub1 = document.createElement('div'); bub1.className = 'bot-bubble'
+  bub1.textContent = '💼 Zoiko Business Deals\n\nFlexible SIM plans for businesses of all sizes. All include a dedicated account manager & priority support.\n\nWhat would you like to do?'
+  row1.appendChild(bub1); msgs.insertBefore(row1, typEl)
 
-    case "Business Deals":
-      bot(
-        "Zoiko Business Deals deliver mobile solutions for all business sizes — cost-effective SIM plans, strong coverage, and flexible connectivity.",
-        [{text:"Explore Business Deals", url:"https://zoikomobile.co.uk/business-deals_sim-only-plans/"},"Back"]
-      ); break
+  const card = document.createElement('div'); card.className = 'choice-card'
+  const b1 = document.createElement('button'); b1.className = 'choice-btn cta'
+  b1.innerHTML = `<div class="choice-ico">🛒</div><div class="choice-txt"><span class="choice-lbl">Go to Checkout</span><span class="choice-desc">Most popular: ${popular.name} — ${popular.price}/mo</span></div><span class="choice-arrow">→</span>`
+  b1.onclick = () => window.open(`https://zoikomobile.co.uk/checkout/?add-to-cart=${popular.cartId}`, '_blank')
+  const b2 = document.createElement('button'); b2.className = 'choice-btn'
+  b2.innerHTML = `<div class="choice-ico">📋</div><div class="choice-txt"><span class="choice-lbl">View All Business Plans</span><span class="choice-desc">See Starter, Pro & Unlimited with full details</span></div><span class="choice-arrow">→</span>`
+  b2.onclick = () => showPlanCards('business')
+  const b3 = document.createElement('button'); b3.className = 'choice-btn'
+  b3.innerHTML = `<div class="choice-ico">🏠</div><div class="choice-txt"><span class="choice-lbl">Back to Main Menu</span><span class="choice-desc">Explore other options</span></div><span class="choice-arrow">→</span>`
+  b3.onclick = () => { history = []; mainMenu() }
+  card.appendChild(b1); card.appendChild(b2); card.appendChild(b3)
+  msgs.insertBefore(card, typEl)
+  scroll()
+  speak('We have great business deals. Go to checkout, view all plans, or go back to the main menu.')
+}
 
-    case "Devices":
-      bot(
-        "Zoiko offers modern smartphones and compatible devices designed to work seamlessly with our mobile network.",
-        [{text:"View Devices", url:"https://zoikomobile.co.uk/devices/"},"Back"]
-      ); break
+/* ══════════════════════════════════════════════════════
+   CUSTOMER REVIEWS — KPI grid + vertical cards
+══════════════════════════════════════════════════════ */
+function showReviews() {
+  hideTyping()
+  /* intro */
+  const row1 = document.createElement('div'); row1.className = 'bot-row'
+  row1.appendChild(makeAvatar())
+  const b1 = document.createElement('div'); b1.className = 'bot-bubble'
+  b1.textContent = '⭐ Zoiko Mobile Customer Reviews\n\nDon\'t just take our word for it — see what our customers say!'
+  row1.appendChild(b1); msgs.insertBefore(row1, typEl)
 
-    case "Animals & Music":
-      bot(
-        "Animals & Music is a unique Zoiko experience designed to entertain and promote creative digital engagement.",
-        [{text:"Explore Animals & Music", url:"https://zoikomobile.co.uk/animals-and-music/"},"Back"]
-      ); break
+  /* KPI grid */
+  const grid = document.createElement('div'); grid.className = 'kpi-grid'
+  ;[{num:'4.8★',lbl:'Average Rating'},{num:'2,400+',lbl:'Happy Customers'},{num:'98%',lbl:'Satisfaction Rate'},{num:'24/7',lbl:'Support Available'}].forEach(k=>{
+    const c=document.createElement('div'); c.className='kpi-card'
+    c.innerHTML=`<span class="kpi-num">${k.num}</span><div class="kpi-lbl">${k.lbl}</div>`
+    grid.appendChild(c)
+  })
+  msgs.insertBefore(grid, typEl)
 
-    case "About Us":
-      bot(
-        "Zoiko Mobile UK is part of the Zoiko Communications Group — affordable SIM-only plans, 5G, EU roaming, and reliable customer support.",
-        [{text:"Read About Zoiko", url:"https://zoikomobile.co.uk/about-us/"},"Back"]
-      ); break
+  /* review cards */
+  const stack = document.createElement('div'); stack.className = 'review-stack'
+  REVIEWS.forEach(r => {
+    const c = document.createElement('div'); c.className = 'review-card'
+    c.innerHTML = `<div class="rv-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div><div class="rv-text">"${r.text}"</div><div class="rv-author">${r.author}</div><div class="rv-date">${r.date}</div>`
+    stack.appendChild(c)
+  })
+  msgs.insertBefore(stack, typEl)
 
-    case "Activate SIM":
-      bot(
-        "Activating your Zoiko SIM is quick and simple. Follow the steps online to start your plan immediately.",
-        [{text:"Activate SIM", url:"https://zoikomobile.co.uk/activate-your-sim/"},"Back"]
-      ); break
+  /* CTA */
+  bot('Ready to join thousands of happy Zoiko customers? 😊', ['📋 Zoiko Plans','🏠 Main Menu'])
+  scroll()
+  speak('Here are our customer reviews. We have over 2400 happy customers with a 4.8 star average rating.')
+}
 
-    case "Top Up":
-      bot(
-        "Recharge your Zoiko SIM easily via the online top-up portal — pick your plan and pay to continue uninterrupted.",
-        [{text:"Top Up Now", url:"https://zoikomobile.co.uk/recharge/"},"Back"]
-      ); break
+/* ══════════════════════════════════════════════════════
+   CHIP / MENU ROUTER
+══════════════════════════════════════════════════════ */
+function handleChip(c) {
+  switch(c) {
+    /* ── Main menu items ── */
+    case 'Zoiko Plans':        showPlanTypes(); break
+    case 'Business Deals':     showBusinessChoice(); break
+    case 'Student Plans':      showPlanChoice('student'); break
+    case 'Essential Plans':    showPlanChoice('essential'); break
+    case 'Social Tariff':      showPlanChoice('social'); break
+    case 'Data Only Plans':    showPlanChoice('data'); break
+    case '30 Day Plans':       showPlanChoice('30day'); break
+    case '⬅️ Back':           showPlanTypes(); break
+    case '📋 Zoiko Plans':    showPlanTypes(); break
+    case '🏠 Main Menu':      history=[]; mainMenu(); break
+    case '⬅️ Back to Plan Types': showPlanTypes(); break
+    case '💼 Business Deals': showBusinessChoice(); break
+    case '⭐ Customer Reviews':
+    case 'Customer Reviews':   showReviews(); break
+    case 'Rate & Exit':        showRating(true); break
 
-    case "Switch & Save":
-      bot(
-        "Switch to Zoiko and enjoy affordable plans, reliable coverage, and seamless connectivity while saving money monthly.",
-        [{text:"Switch to Zoiko", url:"https://zoikomobile.co.uk/switch-and-save/"},"Back"]
-      ); break
+    case 'Devices':
+      bot('Zoiko offers modern smartphones and compatible devices designed to work seamlessly with our mobile network.',
+        [{text:'View Devices',url:'https://zoikomobile.co.uk/devices/'},'🏠 Main Menu']); break
 
-    case "Contact Us":
-      bot(
-        "Need help? Reach our support team through the contact page anytime.",
-        [{text:"Contact Zoiko", url:"https://zoikomobile.co.uk/contact-us/"},"Back"]
-      ); break
+    case 'Animals & Music':
+      bot('Animals & Music is a unique Zoiko experience designed to entertain and promote creative digital engagement.',
+        [{text:'Explore Animals & Music',url:'https://zoikomobile.co.uk/animals-and-music/'},'🏠 Main Menu']); break
 
-    case "Support":
-      bot(
-        "Zoiko Support helps with billing, SIM activation, network issues, and general inquiries.",
-        [{text:"Visit Support", url:"https://zoikomobile.co.uk/support/"},"Back"]
-      ); break
+    case 'About Us':
+      bot('Zoiko Mobile UK is part of the Zoiko Communications Group — affordable SIM-only plans, 5G, EU roaming, and reliable customer support.',
+        [{text:'Read About Zoiko',url:'https://zoikomobile.co.uk/about-us/'},'🏠 Main Menu']); break
 
-    case "International Calls":
-      bot(
-        "Zoiko offers international calling to 80+ countries — stay connected worldwide without high costs.",
-        [{text:"International Calling Details", url:"https://zoikomobile.co.uk/international-calling/"},"Back"]
-      ); break
+    case 'Activate SIM':
+      bot('Activating your Zoiko SIM is quick and simple. Follow the steps online to start your plan immediately.',
+        [{text:'Activate SIM',url:'https://zoikomobile.co.uk/activate-your-sim/'},'🏠 Main Menu']); break
 
-    case "Back":
-      mainMenu(); break
+    case 'Top Up':
+      bot('Recharge your Zoiko SIM easily via the online top-up portal — pick your plan and pay to continue uninterrupted.',
+        [{text:'Top Up Now',url:'https://zoikomobile.co.uk/recharge/'},'🏠 Main Menu']); break
 
-    case "Exit":
-      showRating(); break
+    case 'Switch & Save':
+      bot('Switch to Zoiko and enjoy affordable plans, reliable coverage, and seamless connectivity while saving money monthly.',
+        [{text:'Switch to Zoiko',url:'https://zoikomobile.co.uk/switch-and-save/'},'🏠 Main Menu']); break
+
+    case 'Contact Us':
+      bot('Need help? Reach our support team through the contact page anytime.',
+        [{text:'Contact Zoiko',url:'https://zoikomobile.co.uk/contact-us/'},'🏠 Main Menu']); break
+
+    case 'Support':
+      bot('Zoiko Support helps with billing, SIM activation, network issues, and general enquiries.',
+        [{text:'Visit Support',url:'https://zoikomobile.co.uk/support/'},'🏠 Main Menu']); break
+
+    case 'International Calls':
+      bot('Zoiko offers international calling to 80+ countries — stay connected worldwide without high costs.',
+        [{text:'International Calling Details',url:'https://zoikomobile.co.uk/international-calling/'},'🏠 Main Menu']); break
 
     default:
-      bot(
-        "I didn't recognise that. Please choose an option below.",
-        [
-          "Zoiko Plans","Business Deals","Devices","Animals & Music","About Us",
-          "Activate SIM","Top Up","Switch & Save","Contact Us","Support",
-          "International Calls","Exit"
-        ]
-      )
+      askGPT(c)
   }
 }
 
-function showRating(){
-  bot("Please rate your experience with Zovie.")
-  const row = document.createElement("div")
-  row.className = "rating-row"
-  row.innerHTML = `
-    <span class="star">★</span><span class="star">★</span>
-    <span class="star">★</span><span class="star">★</span><span class="star">★</span>
-    <div id="feedbackForm" style="display:none;margin-top:10px">
-      <input id="fname"    class="feedback-input" placeholder="Name">
-      <input id="fphone"   class="feedback-input" placeholder="Phone">
-      <input id="femail"   class="feedback-input" placeholder="Email">
-      <textarea id="ffeedback" class="feedback-input" rows="3" placeholder="Describe your issue"></textarea>
-      <button onclick="submitFeedback()"
-        style="margin-top:8px;background:#7c3aed;color:white;border:none;
-               padding:8px 18px;border-radius:18px;cursor:pointer">Submit</button>
-    </div>
-  `
-  messages.appendChild(row)
-  messages.scrollTop = messages.scrollHeight
-
-  const stars = row.querySelectorAll(".star")
-  stars.forEach((s, i) => {
-    s.onclick = () => {
-      selectedRating = i + 1
-      stars.forEach(st => st.classList.remove("active"))
-      for(let j = 0; j <= i; j++) stars[j].classList.add("active")
-      if(selectedRating >= 4){
-        bot("Thank you for using Zovie! We appreciate your positive feedback. 😊")
-      } else {
-        document.getElementById("feedbackForm").style.display = "block"
-      }
-    }
-  })
-}
-
-async function submitFeedback(){
-  const data = {
-    rating:  selectedRating,
-    name:    document.getElementById("fname").value,
-    phone:   document.getElementById("fphone").value,
-    email:   document.getElementById("femail").value,
-    message: document.getElementById("ffeedback").value
-  }
-  try{
-    await fetch("/feedback/", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(data)
+/* ══════════════════════════════════════════════════════
+   GPT CALL → /chat/
+══════════════════════════════════════════════════════ */
+async function askGPT(text) {
+  if (isBusy) return
+  setBusy(true); showTyping()
+  try {
+    const res = await fetch('/chat/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+      body:JSON.stringify({message:text, history}),
     })
-  }catch(e){}
-  bot("Thank you! A live agent will contact you shortly. ")
+    if (!res.ok) throw new Error('HTTP ' + res.status)
+    const d = await res.json()
+    if (d.error) {
+      bot('Sorry, something went wrong. Please try again.', ['🏠 Main Menu','Contact Us'])
+    } else {
+      history = d.history || history
+      const chips = Array.isArray(d.items) ? [...d.items] : []
+      if (!chips.some(c => c.includes('Main Menu'))) chips.push('🏠 Main Menu')
+      bot(d.reply, chips)
+    }
+  } catch(e) {
+    console.error('[Zovie]', e)
+    bot("I couldn't reach the server. Please check your connection.", ['🏠 Main Menu'])
+  }
+  setBusy(false)
 }
 
-/* ── SINGLE SEND FUNCTION — keyboard & mic both call this ── */
-function sendMessage(textOverride){
-  if(isSending) return
+/* ══════════════════════════════════════════════════════
+   SEND — handles keyboard, button, and voice
+══════════════════════════════════════════════════════ */
+function send(override) {
+  if (isBusy) return
+  const text = (override !== undefined ? override : inp.value).trim()
+  if (!text) return
+  inp.value = ''; inp.style.height = 'auto'
+  if (RESET_WORDS.has(text.toLowerCase().trim())) { history = []; userBubble(text); mainMenu(); return }
+  userBubble(text)
+  handleChip(text) || askGPT(text)
+}
 
-  const text = (textOverride !== undefined ? textOverride : input.value).trim()
-  if(!text) return
+/* Check if handleChip matched — returns true if it's a known chip */
+const KNOWN_CHIPS = new Set([
+  'Zoiko Plans','Business Deals','Student Plans','Essential Plans','Social Tariff',
+  'Data Only Plans','30 Day Plans','Devices','Animals & Music','About Us','Activate SIM',
+  'Top Up','Switch & Save','Contact Us','Support','International Calls','Rate & Exit',
+  '⬅️ Back','🏠 Main Menu','⬅️ Back to Plan Types','💼 Business Deals',
+  '⭐ Customer Reviews','Customer Reviews','📋 Zoiko Plans',
+])
 
-  isSending = true
-  input.value = ""
+/* Override send to use GPT for unknown text */
+function sendMessage(override) {
+  if (isBusy) return
+  const text = (override !== undefined ? override : inp.value).trim()
+  if (!text) return
+  inp.value = ''; inp.style.height = 'auto'
+
+  if (RESET_WORDS.has(text.toLowerCase().trim())) { history = []; userBubble(text); mainMenu(); return }
 
   userBubble(text)
 
-  const canonical = resolveChoice(text)
-  if(canonical){
-    processChoice(canonical)
-  } else {
-    bot(
-      `I didn't recognise "${text}". Please choose an option below.`,
-      [
-        "Zoiko Plans","Business Deals","Devices","Animals & Music","About Us",
-        "Activate SIM","Top Up","Switch & Save","Contact Us","Support",
-        "International Calls","Exit"
-      ]
-    )
-  }
-
-  setTimeout(() => { isSending = false }, 400)
+  if (KNOWN_CHIPS.has(text)) { handleChip(text) }
+  else { askGPT(text) }
 }
 
-/* ── SEND BUTTON ── */
 sendBtn.onclick = () => sendMessage()
+inp.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage() } })
 
-/* ── ENTER KEY ── */
-input.addEventListener("keydown", e => {
-  if(e.key === "Enter"){ e.preventDefault(); sendMessage() }
-})
+/* ══════════════════════════════════════════════════════
+   RATING WIDGET
+══════════════════════════════════════════════════════ */
+function showRating(closeAfter = false) {
+  if (document.querySelector('.rating-wrap')) return
+  bot('Thanks for chatting with Zovie today! 😊 How was your experience?')
+  setTimeout(() => {
+    const wrap = document.createElement('div'); wrap.className = 'rating-wrap'
+    wrap.innerHTML = `
+      <div class="rt">Rate your experience</div>
+      <div class="rs">Tap a star to rate Zovie</div>
+      <div class="star-row">
+        <button class="star" data-i="1">★</button>
+        <button class="star" data-i="2">★</button>
+        <button class="star" data-i="3">★</button>
+        <button class="star" data-i="4">★</button>
+        <button class="star" data-i="5">★</button>
+      </div>
+      <div class="feedback-form" id="zrf">
+        <div class="fi-lbl">Tell us more</div>
+        <input  class="fi-inp" id="zrn" placeholder="Full name">
+        <input  class="fi-inp" id="zrp" placeholder="Phone number">
+        <input  class="fi-inp" id="zre" placeholder="Email address">
+        <textarea class="fi-inp" id="zrm" rows="3" placeholder="Tell us how we can improve…"></textarea>
+        <button class="fi-submit" id="zrb">Send Feedback</button>
+      </div>`
+    msgs.insertBefore(wrap, typEl); scroll()
 
-/* ── SPEECH RECOGNITION ── */
-if("webkitSpeechRecognition" in window || "SpeechRecognition" in window){
+    document.getElementById('zrb').onclick = () => submitRating(closeAfter)
+    wrap.querySelectorAll('.star').forEach(btn => {
+      btn.onclick = () => {
+        selectedRating = parseInt(btn.dataset.i)
+        wrap.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('active', i < selectedRating))
+        if (selectedRating >= 4) {
+          bot('Brilliant — thank you so much! ⭐ Have a wonderful day! 👋')
+          if (closeAfter) setTimeout(() => closeChat(), 2800)
+        } else {
+          document.getElementById('zrf').style.display = 'block'; scroll()
+        }
+      }
+    })
+  }, 900)
+}
+
+async function submitRating(closeAfter = false) {
+  const btn = document.getElementById('zrb'); if(!btn) return
+  btn.disabled = true; btn.textContent = 'Sending…'
+  try {
+    await fetch('/feedback/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+      body:JSON.stringify({
+        rating: selectedRating,
+        name:   (document.getElementById('zrn')||{}).value || '',
+        phone:  (document.getElementById('zrp')||{}).value || '',
+        email:  (document.getElementById('zre')||{}).value || '',
+        message:(document.getElementById('zrm')||{}).value || '',
+      }),
+    })
+  } catch(e) { console.error(e) }
+  bot('Thank you! 🙏 A member of our team will be in touch shortly.')
+  if (closeAfter) setTimeout(() => closeChat(), 2800)
+}
+
+/* ══════════════════════════════════════════════════════
+   SPEECH RECOGNITION
+══════════════════════════════════════════════════════ */
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-  recognition = new SR()
-  recognition.lang            = "en-GB"
-  recognition.continuous      = false
-  recognition.interimResults  = false
-  recognition.maxAlternatives = 1
-
-  recognition.onstart = () => {
-    isListening = true
-    micBtn.classList.add("listening")
-    micStatus.innerText = "🎙️ Listening… speak now"
-  }
-
-  recognition.onend = () => {
-    isListening = false
-    micBtn.classList.remove("listening")
-    setTimeout(() => { micStatus.innerText = "" }, 2000)
-  }
-
-  recognition.onerror = e => {
-    isListening = false
-    micBtn.classList.remove("listening")
-    micStatus.innerText =
-      e.error === "no-speech" ? "No speech detected. Try again."
-                              : "Mic error: " + e.error
-    setTimeout(() => { micStatus.innerText = "" }, 3000)
-  }
-
-  /* spoken text goes DIRECTLY into sendMessage — same path as keyboard */
-  recognition.onresult = e => {
-    const spoken = e.results[0][0].transcript.trim()
-    micStatus.innerText = `✅ Heard: "${spoken}"`
-    sendMessage(spoken)
-  }
+  recog = new SR()
+  recog.lang = 'en-GB'; recog.continuous = false; recog.interimResults = false; recog.maxAlternatives = 1
+  recog.onstart  = () => { isListening=true;  micBtn.classList.add('listening');    hSub.textContent='Listening…'; micSt.textContent='🎙️ Listening… speak now' }
+  recog.onend    = () => { isListening=false; micBtn.classList.remove('listening'); hSub.textContent='Online · AI assistant'; setTimeout(()=>micSt.textContent='',3000) }
+  recog.onerror  = e  => { isListening=false; micBtn.classList.remove('listening'); hSub.textContent='Online · AI assistant'; micSt.textContent=e.error==='no-speech'?'No speech detected.':'Mic error: '+e.error; setTimeout(()=>micSt.textContent='',3500) }
+  recog.onresult = e  => { const t=e.results[0][0].transcript.trim(); micSt.textContent=`✅ Heard: "${t}"`; sendMessage(t) }
 }
-
-/* ── MIC BUTTON ── */
 micBtn.onclick = () => {
-  if(!recognition){
-    micStatus.innerText = "Speech recognition not supported in this browser."
-    setTimeout(() => { micStatus.innerText = "" }, 3000)
-    return
-  }
-  if(isListening){
-    recognition.stop()
-  } else {
-    try{ recognition.start() }
-    catch(e){ micStatus.innerText = "Mic busy — try again." }
-  }
+  if (!recog) { micSt.textContent='Speech not supported in this browser.'; setTimeout(()=>micSt.textContent='',3000); return }
+  if (isListening) recog.stop()
+  else try { recog.start() } catch(e) { micSt.textContent='Mic busy — try again.' }
 }
 
-/* ── OPEN / CLOSE ── */
-document.getElementById("chat-toggle").onclick = () => {
-  document.getElementById("chatbot").style.display = "flex"
-  messages.innerHTML = ""
-  mainMenu()
+/* ══════════════════════════════════════════════════════
+   OPEN / CLOSE
+══════════════════════════════════════════════════════ */
+function openChat() {
+  dot.style.display = 'none'
+  const cb = document.getElementById('chatbot')
+  cb.style.display = 'flex'; isOpen = true
+  requestAnimationFrame(() => cb.classList.add('open','visible'))
+  if (!started) { started = true; mainMenu() }
+  setTimeout(() => inp.focus(), 380)
 }
-
-document.getElementById("close").onclick = () => {
+function closeChat() {
+  const cb = document.getElementById('chatbot')
+  cb.classList.remove('visible'); isOpen = false
+  setTimeout(() => { cb.classList.remove('open'); cb.style.display = 'none' }, 330)
   speechSynthesis.cancel()
-  if(recognition && isListening) recognition.stop()
-  document.getElementById("chatbot").style.display = "none"
+  if (recog && isListening) recog.stop()
 }
 
+fab.onclick = () => isOpen ? closeChat() : openChat()
+closeB.onclick = () => closeChat()
+document.addEventListener('click', e => {
+  if (isOpen && !document.getElementById('chatbot').contains(e.target) && !fab.contains(e.target)) closeChat()
+})
+document.getElementById('chatbot').addEventListener('click', e => e.stopPropagation())
+fab.addEventListener('click', e => e.stopPropagation())
 </script>
 </body>
 </html>
