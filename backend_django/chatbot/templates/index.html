@@ -105,6 +105,11 @@ body{font-family:var(--font);background:var(--bg)}
 }
 .hbtn:hover{background:rgba(255,255,255,.18)}
 .hbtn svg{width:21px;height:21px;fill:currentColor}
+/* Mute button active state */
+#mute-btn.muted{background:rgba(255,59,48,.35);}
+#mute-btn.muted svg{fill:#fff}
+#mute-btn .mute-line{display:none}
+#mute-btn.muted .mute-line{display:block}
 
 /* ═══════════════════════════════════════════════════
    MESSAGES AREA
@@ -374,6 +379,17 @@ body{font-family:var(--font);background:var(--bg)}
 }
 
 /* ═══════════════════════════════════════════════════
+   MUTE TOAST
+═══════════════════════════════════════════════════ */
+#mute-toast{
+  position:absolute;top:70px;right:14px;
+  background:rgba(0,0,0,.72);color:#fff;
+  font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;
+  opacity:0;transition:opacity .25s;pointer-events:none;z-index:10;
+}
+#mute-toast.show{opacity:1}
+
+/* ═══════════════════════════════════════════════════
    RATING WIDGET
 ═══════════════════════════════════════════════════ */
 .rating-wrap{
@@ -439,6 +455,14 @@ body{font-family:var(--font);background:var(--bg)}
       </div>
     </div>
     <div class="header-actions">
+      <!-- MUTE BUTTON (NEW) -->
+      <button class="hbtn" id="mute-btn" title="Mute / Unmute voice">
+        <!-- Speaker icon (unmuted) -->
+        <svg id="icon-unmuted" viewBox="0 0 24 24">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          <line class="mute-line" x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </button>
       <button class="hbtn" title="Call us" onclick="window.open('tel:+441234567890')">
         <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
       </button>
@@ -447,6 +471,9 @@ body{font-family:var(--font);background:var(--bg)}
       </button>
     </div>
   </div>
+
+  <!-- Mute toast notification -->
+  <div id="mute-toast">🔇 Voice muted</div>
 
   <!-- Messages -->
   <div id="messages">
@@ -477,19 +504,12 @@ body{font-family:var(--font);background:var(--bg)}
 
 <script>
 /* ════════════════════════════════════════════════════════════
-   ZOVIE NORMAL CHATBOT v3.0
-   ─────────────────────────────────────────────────────────
-   Features merged from WhatsApp chatbot:
-   ✅ GPT-powered /chat/ endpoint with conversation history
-   ✅ 3-option intermediate screen before plan cards
-   ✅ Full-width vertical plan cards with Buy → checkout
-   ✅ All plan categories: Student, Essential, Social, Data, Zoiko, 30Day, Business
-   ✅ Customer Reviews with KPI grid + vertical review cards
-   ✅ Voice TTS (UK female) + Speech recognition
-   ✅ Typing indicator
-   ✅ Rating widget → /feedback/
-   ✅ All original menu options preserved + URLs
-   ✅ Purple theme maintained
+   ZOVIE CHATBOT v3.1
+   FIXES:
+   ✅ Mute / Unmute TTS voice button in header
+   ✅ GPT properly called for ALL free-text questions
+   ✅ Context-aware: separate question always gets fresh GPT answer
+   ✅ All original features preserved
 ════════════════════════════════════════════════════════════ */
 
 const msgs    = document.getElementById('messages')
@@ -502,8 +522,36 @@ const fab     = document.getElementById('chat-toggle')
 const dot     = document.getElementById('fab-dot')
 const closeB  = document.getElementById('close-btn')
 const hSub    = document.getElementById('hsub')
+const muteBtn = document.getElementById('mute-btn')
+const muteToast = document.getElementById('mute-toast')
 
 const LOGO = '/static/assets/logo.png'
+
+/* ══════════════════════════════════════════════════════
+   MUTE STATE  (FIX #2 — voice mute toggle)
+══════════════════════════════════════════════════════ */
+let isMuted = false
+let muteToastTimer = null
+
+function toggleMute() {
+  isMuted = !isMuted
+  muteBtn.classList.toggle('muted', isMuted)
+  muteBtn.title = isMuted ? 'Unmute voice' : 'Mute voice'
+
+  // Update the SVG line (strikethrough indicator)
+  const line = muteBtn.querySelector('.mute-line')
+  if (line) line.style.display = isMuted ? 'block' : 'none'
+
+  // Show toast
+  muteToast.textContent = isMuted ? '🔇 Voice muted' : '🔊 Voice on'
+  muteToast.classList.add('show')
+  clearTimeout(muteToastTimer)
+  muteToastTimer = setTimeout(() => muteToast.classList.remove('show'), 2200)
+
+  if (isMuted) speechSynthesis.cancel()
+}
+
+muteBtn.addEventListener('click', toggleMute)
 
 /* ══════════════════════════════════════════════════════
    PLAN DATA — update cartId to your WooCommerce IDs
@@ -610,7 +658,11 @@ const MAIN_MENU = [
 const PLAN_TYPES = ['Student Plans','Essential Plans','Social Tariff','Data Only Plans','30 Day Plans','⬅️ Back']
 const RESET_WORDS = new Set(['hi','hello','hey','start','menu','main menu','home','restart','back to start','hiya','0'])
 
-let history = [], selectedRating = 0, isBusy = false, isListening = false, recog = null, ukV = null, started = false, isOpen = false
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+let history = [], selectedRating = 0, isBusy = false
+let isListening = false, recog = null, ukV = null, started = false, isOpen = false
 
 /* ── CSRF ── */
 const csrf = () => (document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/) || [])[2] || ''
@@ -619,7 +671,7 @@ const csrf = () => (document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/) || [])[2]
 const scroll = () => requestAnimationFrame(() => { msgs.scrollTop = msgs.scrollHeight })
 
 /* ══════════════════════════════════════════════════════
-   AVATAR helpers — defined first
+   AVATAR helpers
 ══════════════════════════════════════════════════════ */
 function makeAvatar() {
   const wrap = document.createElement('div')
@@ -655,17 +707,25 @@ inp.addEventListener('input', function(){
 })
 
 /* ══════════════════════════════════════════════════════
-   TTS — UK Female voice
+   TTS — UK Female voice (respects mute state)
 ══════════════════════════════════════════════════════ */
 function loadVoice() {
   const voices = speechSynthesis.getVoices()
-  const prefs = [v=>v.name==='Serena',v=>v.name==='Kate',v=>v.name.includes('Google UK English Female'),v=>v.lang==='en-GB'&&/female/i.test(v.name),v=>v.lang==='en-GB',v=>v.lang.startsWith('en')]
+  const prefs = [
+    v=>v.name==='Serena',
+    v=>v.name==='Kate',
+    v=>v.name.includes('Google UK English Female'),
+    v=>v.lang==='en-GB'&&/female/i.test(v.name),
+    v=>v.lang==='en-GB',
+    v=>v.lang.startsWith('en')
+  ]
   for (const fn of prefs) { const f = voices.find(fn); if(f){ukV=f;break} }
 }
 if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoice
 loadVoice()
 
 function speak(text) {
+  if (isMuted) return          // ← MUTE CHECK
   speechSynthesis.cancel()
   const clean = text.replace(/<[^>]+>/g,' ').replace(/https?:\/\/\S+/g,' ').replace(/[^\w\s',.!?£\-]/g,' ').replace(/\s{2,}/g,' ').trim()
   if (!clean) return
@@ -752,27 +812,22 @@ function showPlanChoice(planKey) {
   const planArr = PLANS[planKey] || []
   const popular = planArr.find(p => p.popular) || planArr[0]
 
-  /* intro bubble */
   const row1 = document.createElement('div'); row1.className = 'bot-row'
   row1.appendChild(makeAvatar())
   const bub1 = document.createElement('div'); bub1.className = 'bot-bubble'
   bub1.textContent = `You've selected ${label}! 🎉\n\nWhat would you like to do?`
   row1.appendChild(bub1); msgs.insertBefore(row1, typEl)
 
-  /* choice card */
   const card = document.createElement('div'); card.className = 'choice-card'
 
-  /* Option 1 — Checkout */
   const b1 = document.createElement('button'); b1.className = 'choice-btn cta'
   b1.innerHTML = `<div class="choice-ico">🛒</div><div class="choice-txt"><span class="choice-lbl">Go to Checkout</span><span class="choice-desc">Most popular: ${popular ? popular.name + ' — ' + popular.price + '/mo' : label}</span></div><span class="choice-arrow">→</span>`
   b1.onclick = () => { if(popular) window.open(`https://zoikomobile.co.uk/checkout/?add-to-cart=${popular.cartId}`, '_blank') }
 
-  /* Option 2 — View all plans */
   const b2 = document.createElement('button'); b2.className = 'choice-btn'
   b2.innerHTML = `<div class="choice-ico">📋</div><div class="choice-txt"><span class="choice-lbl">View All ${label}</span><span class="choice-desc">Browse all plans with full details, features & pricing</span></div><span class="choice-arrow">→</span>`
   b2.onclick = () => showPlanCards(planKey)
 
-  /* Option 3 — Main menu */
   const b3 = document.createElement('button'); b3.className = 'choice-btn'
   b3.innerHTML = `<div class="choice-ico">🏠</div><div class="choice-txt"><span class="choice-lbl">Back to Main Menu</span><span class="choice-desc">Explore other options or ask Zovie anything</span></div><span class="choice-arrow">→</span>`
   b3.onclick = () => { history = []; mainMenu() }
@@ -791,12 +846,10 @@ function showPlanCards(planKey) {
   const plans = PLANS[planKey] || []
   const label = PLAN_LABELS[planKey] || 'Plans'
 
-  /* header bubble */
   const row1 = document.createElement('div'); row1.className = 'bot-row'
   row1.appendChild(makeAvatar())
   const bub = document.createElement('div'); bub.className = 'bot-bubble'
   bub.innerHTML = `Here are all our <strong>${label}</strong>! 👇<br><small style="color:#6b7280">Tap "Buy this plan →" on any card to go straight to checkout.</small>`
-  /* nav chips */
   const cs = document.createElement('div'); cs.className = 'quick'
   const bb1 = document.createElement('button'); bb1.className = 'qbtn'; bb1.textContent = '⬅️ Back to Plan Types'
   bb1.onclick = () => { disChips(cs); userBubble('⬅️ Back to Plan Types'); showPlanTypes() }
@@ -805,7 +858,6 @@ function showPlanCards(planKey) {
   cs.appendChild(bb1); cs.appendChild(bb2); bub.appendChild(cs)
   row1.appendChild(bub); msgs.insertBefore(row1, typEl)
 
-  /* vertical card stack */
   const stack = document.createElement('div'); stack.className = 'plan-stack'
   plans.forEach(plan => {
     const card = document.createElement('div')
@@ -827,7 +879,6 @@ function showPlanCards(planKey) {
   })
   msgs.insertBefore(stack, typEl)
 
-  /* BOTTOM NAV — so user isn't stranded after scrolling all cards */
   const rowB = document.createElement('div'); rowB.className = 'bot-row'
   rowB.appendChild(makeAvatar())
   const bubB = document.createElement('div'); bubB.className = 'bot-bubble'
@@ -847,7 +898,7 @@ function showPlanCards(planKey) {
 }
 
 /* ══════════════════════════════════════════════════════
-   BUSINESS DEALS — choice screen first
+   BUSINESS DEALS
 ══════════════════════════════════════════════════════ */
 function showBusinessChoice() {
   hideTyping()
@@ -876,18 +927,16 @@ function showBusinessChoice() {
 }
 
 /* ══════════════════════════════════════════════════════
-   CUSTOMER REVIEWS — KPI grid + vertical cards
+   CUSTOMER REVIEWS
 ══════════════════════════════════════════════════════ */
 function showReviews() {
   hideTyping()
-  /* intro */
   const row1 = document.createElement('div'); row1.className = 'bot-row'
   row1.appendChild(makeAvatar())
   const b1 = document.createElement('div'); b1.className = 'bot-bubble'
   b1.textContent = '⭐ Zoiko Mobile Customer Reviews\n\nDon\'t just take our word for it — see what our customers say!'
   row1.appendChild(b1); msgs.insertBefore(row1, typEl)
 
-  /* KPI grid */
   const grid = document.createElement('div'); grid.className = 'kpi-grid'
   ;[{num:'4.8★',lbl:'Average Rating'},{num:'2,400+',lbl:'Happy Customers'},{num:'98%',lbl:'Satisfaction Rate'},{num:'24/7',lbl:'Support Available'}].forEach(k=>{
     const c=document.createElement('div'); c.className='kpi-card'
@@ -896,7 +945,6 @@ function showReviews() {
   })
   msgs.insertBefore(grid, typEl)
 
-  /* review cards */
   const stack = document.createElement('div'); stack.className = 'review-stack'
   REVIEWS.forEach(r => {
     const c = document.createElement('div'); c.className = 'review-card'
@@ -905,7 +953,6 @@ function showReviews() {
   })
   msgs.insertBefore(stack, typEl)
 
-  /* CTA */
   bot('Ready to join thousands of happy Zoiko customers? 😊', ['📋 Zoiko Plans','🏠 Main Menu'])
   scroll()
   speak('Here are our customer reviews. We have over 2400 happy customers with a 4.8 star average rating.')
@@ -916,66 +963,66 @@ function showReviews() {
 ══════════════════════════════════════════════════════ */
 function handleChip(c) {
   switch(c) {
-    /* ── Main menu items ── */
-    case 'Zoiko Plans':        showPlanTypes(); break
-    case 'Business Deals':     showBusinessChoice(); break
-    case 'Student Plans':      showPlanChoice('student'); break
-    case 'Essential Plans':    showPlanChoice('essential'); break
-    case 'Social Tariff':      showPlanChoice('social'); break
-    case 'Data Only Plans':    showPlanChoice('data'); break
-    case '30 Day Plans':       showPlanChoice('30day'); break
-    case '⬅️ Back':           showPlanTypes(); break
-    case '📋 Zoiko Plans':    showPlanTypes(); break
-    case '🏠 Main Menu':      history=[]; mainMenu(); break
-    case '⬅️ Back to Plan Types': showPlanTypes(); break
-    case '💼 Business Deals': showBusinessChoice(); break
+    case 'Zoiko Plans':        showPlanTypes(); return true
+    case 'Business Deals':     showBusinessChoice(); return true
+    case 'Student Plans':      showPlanChoice('student'); return true
+    case 'Essential Plans':    showPlanChoice('essential'); return true
+    case 'Social Tariff':      showPlanChoice('social'); return true
+    case 'Data Only Plans':    showPlanChoice('data'); return true
+    case '30 Day Plans':       showPlanChoice('30day'); return true
+    case '⬅️ Back':           showPlanTypes(); return true
+    case '📋 Zoiko Plans':    showPlanTypes(); return true
+    case '🏠 Main Menu':      history=[]; mainMenu(); return true
+    case '⬅️ Back to Plan Types': showPlanTypes(); return true
+    case '💼 Business Deals': showBusinessChoice(); return true
     case '⭐ Customer Reviews':
-    case 'Customer Reviews':   showReviews(); break
-    case 'Rate & Exit':        showRating(true); break
+    case 'Customer Reviews':   showReviews(); return true
+    case 'Rate & Exit':        showRating(true); return true
 
     case 'Devices':
       bot('Zoiko offers modern smartphones and compatible devices designed to work seamlessly with our mobile network.',
-        [{text:'View Devices',url:'https://zoikomobile.co.uk/devices/'},'🏠 Main Menu']); break
+        [{text:'View Devices',url:'https://zoikomobile.co.uk/devices/'},'🏠 Main Menu']); return true
 
     case 'Animals & Music':
       bot('Animals & Music is a unique Zoiko experience designed to entertain and promote creative digital engagement.',
-        [{text:'Explore Animals & Music',url:'https://zoikomobile.co.uk/animals-and-music/'},'🏠 Main Menu']); break
+        [{text:'Explore Animals & Music',url:'https://zoikomobile.co.uk/animals-and-music/'},'🏠 Main Menu']); return true
 
     case 'About Us':
       bot('Zoiko Mobile UK is part of the Zoiko Communications Group — affordable SIM-only plans, 5G, EU roaming, and reliable customer support.',
-        [{text:'Read About Zoiko',url:'https://zoikomobile.co.uk/about-us/'},'🏠 Main Menu']); break
+        [{text:'Read About Zoiko',url:'https://zoikomobile.co.uk/about-us/'},'🏠 Main Menu']); return true
 
     case 'Activate SIM':
       bot('Activating your Zoiko SIM is quick and simple. Follow the steps online to start your plan immediately.',
-        [{text:'Activate SIM',url:'https://zoikomobile.co.uk/activate-your-sim/'},'🏠 Main Menu']); break
+        [{text:'Activate SIM',url:'https://zoikomobile.co.uk/activate-your-sim/'},'🏠 Main Menu']); return true
 
     case 'Top Up':
       bot('Recharge your Zoiko SIM easily via the online top-up portal — pick your plan and pay to continue uninterrupted.',
-        [{text:'Top Up Now',url:'https://zoikomobile.co.uk/recharge/'},'🏠 Main Menu']); break
+        [{text:'Top Up Now',url:'https://zoikomobile.co.uk/recharge/'},'🏠 Main Menu']); return true
 
     case 'Switch & Save':
       bot('Switch to Zoiko and enjoy affordable plans, reliable coverage, and seamless connectivity while saving money monthly.',
-        [{text:'Switch to Zoiko',url:'https://zoikomobile.co.uk/switch-and-save/'},'🏠 Main Menu']); break
+        [{text:'Switch to Zoiko',url:'https://zoikomobile.co.uk/switch-and-save/'},'🏠 Main Menu']); return true
 
     case 'Contact Us':
       bot('Need help? Reach our support team through the contact page anytime.',
-        [{text:'Contact Zoiko',url:'https://zoikomobile.co.uk/contact-us/'},'🏠 Main Menu']); break
+        [{text:'Contact Zoiko',url:'https://zoikomobile.co.uk/contact-us/'},'🏠 Main Menu']); return true
 
     case 'Support':
       bot('Zoiko Support helps with billing, SIM activation, network issues, and general enquiries.',
-        [{text:'Visit Support',url:'https://zoikomobile.co.uk/support/'},'🏠 Main Menu']); break
+        [{text:'Visit Support',url:'https://zoikomobile.co.uk/support/'},'🏠 Main Menu']); return true
 
     case 'International Calls':
       bot('Zoiko offers international calling to 80+ countries — stay connected worldwide without high costs.',
-        [{text:'International Calling Details',url:'https://zoikomobile.co.uk/international-calling/'},'🏠 Main Menu']); break
+        [{text:'International Calling Details',url:'https://zoikomobile.co.uk/international-calling/'},'🏠 Main Menu']); return true
 
     default:
-      askGPT(c)
+      return false   // ← not a known chip → falls through to GPT
   }
 }
 
 /* ══════════════════════════════════════════════════════
    GPT CALL → /chat/
+   FIX: always called for ANY free-text not in KNOWN_CHIPS
 ══════════════════════════════════════════════════════ */
 async function askGPT(text) {
   if (isBusy) return
@@ -993,7 +1040,7 @@ async function askGPT(text) {
     } else {
       history = d.history || history
       const chips = Array.isArray(d.items) ? [...d.items] : []
-      if (!chips.some(c => c.includes('Main Menu'))) chips.push('🏠 Main Menu')
+      if (!chips.some(c => (typeof c === 'string' ? c : c.text || '').includes('Main Menu'))) chips.push('🏠 Main Menu')
       bot(d.reply, chips)
     }
   } catch(e) {
@@ -1004,44 +1051,32 @@ async function askGPT(text) {
 }
 
 /* ══════════════════════════════════════════════════════
-   SEND — handles keyboard, button, and voice
+   SEND — unified handler
+   FIX: handleChip returns true/false — only calls GPT
+        when the text is NOT a known menu option
 ══════════════════════════════════════════════════════ */
-function send(override) {
-  if (isBusy) return
-  const text = (override !== undefined ? override : inp.value).trim()
-  if (!text) return
-  inp.value = ''; inp.style.height = 'auto'
-  if (RESET_WORDS.has(text.toLowerCase().trim())) { history = []; userBubble(text); mainMenu(); return }
-  userBubble(text)
-  handleChip(text) || askGPT(text)
-}
-
-/* Check if handleChip matched — returns true if it's a known chip */
-const KNOWN_CHIPS = new Set([
-  'Zoiko Plans','Business Deals','Student Plans','Essential Plans','Social Tariff',
-  'Data Only Plans','30 Day Plans','Devices','Animals & Music','About Us','Activate SIM',
-  'Top Up','Switch & Save','Contact Us','Support','International Calls','Rate & Exit',
-  '⬅️ Back','🏠 Main Menu','⬅️ Back to Plan Types','💼 Business Deals',
-  '⭐ Customer Reviews','Customer Reviews','📋 Zoiko Plans',
-])
-
-/* Override send to use GPT for unknown text */
 function sendMessage(override) {
   if (isBusy) return
   const text = (override !== undefined ? override : inp.value).trim()
   if (!text) return
   inp.value = ''; inp.style.height = 'auto'
 
-  if (RESET_WORDS.has(text.toLowerCase().trim())) { history = []; userBubble(text); mainMenu(); return }
+  if (RESET_WORDS.has(text.toLowerCase().trim())) {
+    history = []; userBubble(text); mainMenu(); return
+  }
 
   userBubble(text)
 
-  if (KNOWN_CHIPS.has(text)) { handleChip(text) }
-  else { askGPT(text) }
+  // handleChip returns true if it matched a menu item
+  // returns false for free-text → send to GPT
+  const handled = handleChip(text)
+  if (!handled) askGPT(text)
 }
 
 sendBtn.onclick = () => sendMessage()
-inp.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage() } })
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+})
 
 /* ══════════════════════════════════════════════════════
    RATING WIDGET
